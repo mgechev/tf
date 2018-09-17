@@ -1,0 +1,31 @@
+{
+  "name": "logistic-regression",
+  "version": "0.0.0",
+  "description": "Playground for logistic regression",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mgechev/tf.git"
+  },
+  "scripts": {
+    "start": "parcel index.js"
+  },
+  "keywords": [
+    "logistic",
+    "regression",
+    "tensorflow"
+  ],
+  "author": "Minko Gechev <mgechev@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mgechev/tf/issues"
+  },
+  "homepage": "https://github.com/mgechev/tf#readme",
+  "dependencies": {
+    "@tensorflow/tfjs": "^0.13.0",
+    "@tensorflow/tfjs-node": "^0.1.17"
+  },
+  "devDependencies": {
+    "parcel": "^1.9.7"
+  }
+}
