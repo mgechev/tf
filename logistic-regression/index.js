@@ -48,8 +48,14 @@ const train = (xs, ys, iterations, learningRate) => {
   };
 };
 
+const unwrap = val => Array.from(val.dataSync())[0];
+
 const model = train(xs, ys, 550, 0.01);
 for (let i = 0; i < xs[0].length; i += 1) {
-  const res = Array.from(model.predict([[xs[0][i]]]).dataSync())[0] >= 0.5;
+  const res = unwrap(model.predict([[xs[0][i]]])) >= 0.5;
   console.log('Expected:', ys[i] === 1, ', got', res);
 }
+
+console.log('Expected:', 0, ', got', unwrap(model.predict([[-1000]])) > 0.5);
+console.log('Expected:', 1, ', got', unwrap(model.predict([[1000]])) > 0.5);
+console.log('Expected:', 1, ', got', unwrap(model.predict([[10000]])) > 0.5);
