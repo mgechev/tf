@@ -13,7 +13,7 @@ const rows = readFileSync('./paths_finished.tsv')
   .split('\n')
   .filter(r => !r.startsWith('#') && r.trim().length)
   .map(r => r.split('\t')[3].split(';'))
-  .slice(0, 1000);
+  .slice(0, 2000);
 
 const urlIdx = {};
 const idxUrl = {};
@@ -30,23 +30,30 @@ rows.forEach((path, i) => {
   });
 });
 
-const training = rows;
+const training = rows.slice(0, 1700);
+const test = rows.slice(1700, 2000);
 console.log('Total entries in the train set: %d.', training.length);
 console.log('Maximum path length: %d.', maxLen);
 console.log('Total pages: %d.', idx - 1);
 
 const PathSize = 3;
-const LearningRate = 0.01;
+const LearningRate = 0.001;
 
 const modelSaveHandle = tfn.io.fileSystem('./data');
 const modelLoadHandle = tfn.io.fileSystem('./data/model.json');
 
 const getModel = async learningRate => {
-  const pathVector = tf.input({ shape: [PathSize, 1] });
-  const lstm = tf.layers.lstm({ units: 10, returnSequences: false }).apply(pathVector);
-  // const dense1 = tf.layers.dense({ units: 10, inputShape: [PathSize], activation: 'relu' }).apply(pathVector);
-  const dense2 = tf.layers.dense({ units: idx, activation: 'softmax' }).apply(lstm);
-  let model = tf.model({ inputs: pathVector, outputs: dense2 });
+  let model = tf.sequential();
+
+  model.add(tf.layers.inputLayer({ inputShape: [PathSize, 1] }));
+
+  model.add(tf.layers.lstm({ units: 10, returnSequences: true }));
+  model.add(tf.layers.lstm({ units: 10, returnSequences: true }));
+  model.add(tf.layers.lstm({ units: 10, returnSequences: false }));
+
+  model.add(tf.layers.dense({ units: 70, activation: 'relu' }));
+  model.add(tf.layers.dense({ units: idx, activation: 'softmax' }));
+
   model.summary();
   try {
     model = await tf.loadModel(modelLoadHandle);
@@ -63,18 +70,16 @@ const getModel = async learningRate => {
 };
 
 const trainHelper = async (model, xs, ys) => {
+  let epoch = 0;
   await model.fit(xs, ys, {
     shuffle: true,
     epochs: 50,
-    batchSize: 128,
-    verbose: 1,
     callbacks: {
       onBatchEnd: async (batch, logs) => {
         await tf.nextFrame();
       },
       onEpochEnd(_, logs) {
-        console.log('Accuracy %d, loss: %d', logs.acc.toFixed(5), logs.loss.toFixed(5));
-        console.log('Epoch ended');
+        console.log('Epoch %d, accuracy %d, loss: %d', ++epoch, logs.acc.toFixed(5), logs.loss.toFixed(5));
       }
     }
   });
@@ -143,16 +148,24 @@ const predict = async (model, test) => {
     totalMin = Math.min(totalMin, total);
   }
 
-  let same = 0;
+  let nnSame = 0;
+  let markovSame = 0;
   let total = 0;
 
-  for (let l = 2; l <= PathSize; l++) {
+  const markov = buildMarkov(test);
+
+  for (let l = 0; l <= PathSize; l++) {
     for (let i = 0; i < Math.min(test.length, totalMin); i++) {
       const t = test[i];
       if (t.length <= l) {
         continue;
       }
-      const path = t.slice(0, l).map(u => urlIdx[u] / idx);
+      const original = t.slice(0, l).map(u => urlIdx[u]);
+      const path = original.map(u => u / idx);
+      let lastPath = original[original.length - 1];
+      if (!lastPath) {
+        continue;
+      }
       while (path.length < PathSize) {
         path.push(0);
       }
@@ -164,18 +177,63 @@ const predict = async (model, test) => {
             .dataSync()
         ];
       const actual = t[l];
-      // console.log('%s -> %s ## %s', actual, pred, path.map(p => idxUrl[p]).join(' --> '));
+      if (idxUrl[markovPredict(markov, lastPath)] === actual) {
+        markovSame++;
+      }
       if (pred === actual) {
-        same++;
+        nnSame++;
       }
       total++;
     }
-    console.log(same / total);
+    console.log('LSTM %d, Markov %d', nnSame / total, markovSame / total);
   }
+};
+
+const markovPredict = (markov, page) => {
+  let maxIdx = 0;
+  let maxProb = 0;
+  if (!markov[page]) {
+    console.log('Cannot find %s', idxUrl[page]);
+    return 0;
+  }
+  for (let i = 0; i < markov[page].length; i++) {
+    if (markov[page][i] > maxProb) {
+      maxIdx = i;
+      maxProb = markov[page][i];
+    }
+  }
+  return maxIdx;
+};
+
+const buildMarkov = data => {
+  let matrix = [];
+  for (let i = 0; i < data.length; i++) {
+    const path = data[i];
+    for (let p = 0; p < path.length - 1; p++) {
+      const ci = urlIdx[path[p]];
+      const ni = urlIdx[path[p + 1]];
+      matrix[ci] = matrix[ci] || [];
+      matrix[ci][ni] = matrix[ci][ni] || 0;
+      matrix[ci][ni]++;
+    }
+  }
+  for (let i = 0; i < matrix.length; i++) {
+    if (!matrix[i]) {
+      continue;
+    }
+    let total = 0;
+    for (let j = 0; j < matrix[i].length; j++) {
+      total += matrix[i][j] || 0;
+    }
+    for (let j = 0; j < matrix[i].length; j++) {
+      matrix[i][j] = matrix[i][j] / total || 0;
+    }
+  }
+  return matrix;
 };
 
 getModel(LearningRate).then(m => {
   model = m;
-  predict(model, training);
-  // train(model, training, 1250);
+  // predict(model, test);
+  train(model, training);
 });
