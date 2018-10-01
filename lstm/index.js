@@ -122,7 +122,7 @@ const train = async (model, training) => {
       next.push(urlIdx[t[l]]);
     }
   }
-  shuffle(history, next);
+  // shuffle(history, next);
   const xs = tf.tensor3d(history).reshape([history.length, PathSize, 1]);
   const ys = tf.oneHot(next, idx).cast('float32');
   await trainHelper(model, xs, ys);
@@ -143,34 +143,39 @@ const predict = async (model, test) => {
     totalMin = Math.min(totalMin, total);
   }
 
-  for (let l = 0; l <= PathSize; l++) {
+  let same = 0;
+  let total = 0;
+
+  for (let l = 2; l <= PathSize; l++) {
     for (let i = 0; i < Math.min(test.length, totalMin); i++) {
       const t = test[i];
       if (t.length <= l) {
-        // console.log('Training path is less then %d', l);
         continue;
       }
       const path = t.slice(0, l).map(u => urlIdx[u] / idx);
       while (path.length < PathSize) {
         path.push(0);
       }
-      console.log(
-        '%s -> %s ## %s',
-        t[l],
+      const pred =
         idxUrl[
           model
-            .predict(tf.tensor3d([path], [1, PathSize, 1]).reshape([1, PathSize, 1]))
+            .predict(tf.tensor3d([[path]], [1, 1, PathSize]).reshape([1, PathSize, 1]))
             .argMax(1)
             .dataSync()
-        ],
-        path.map(p => idxUrl[p]).join(' --> ')
-      );
+        ];
+      const actual = t[l];
+      // console.log('%s -> %s ## %s', actual, pred, path.map(p => idxUrl[p]).join(' --> '));
+      if (pred === actual) {
+        same++;
+      }
+      total++;
     }
+    console.log(same / total);
   }
 };
 
 getModel(LearningRate).then(m => {
   model = m;
-  // predict(model, training);
-  train(model, training, 1250);
+  predict(model, training);
+  // train(model, training, 1250);
 });
