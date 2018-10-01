@@ -1,0 +1,26 @@
+{
+  "name": "lstm",
+  "version": "0.0.0",
+  "description": "LSTM for navigation prediction",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mgechev/tf.git"
+  },
+  "keywords": [
+    "LSTM",
+    "Guess.js"
+  ],
+  "author": "Minko Gechev <mgechev@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mgechev/tf/issues"
+  },
+  "homepage": "https://github.com/mgechev/tf#readme",
+  "devDependencies": {
+    "typescript": "^3.1.1"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs": "^0.13.1"
+  }
+}
