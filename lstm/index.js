@@ -4,6 +4,7 @@
 
 // import * as tf from '@tensorflow/tfjs';
 
+const tfn = require('@tensorflow/tfjs-node');
 const tf = require('@tensorflow/tfjs');
 const { readFileSync } = require('fs');
 
@@ -18,9 +19,6 @@ const idxUrl = {};
 let maxLen = 0;
 let idx = 1;
 rows.forEach((path, i) => {
-  if (path.length === 104) {
-    console.log(i);
-  }
   maxLen = Math.max(path.length, maxLen);
   path.forEach(url => {
     if (!urlIdx[url]) {
@@ -36,32 +34,47 @@ const test = rows.slice(rows.length - 500);
 console.log('Total entries in the train set: %d.', training.length);
 console.log('Total entries in the test set: %d.', test.length);
 console.log('Maximum path length: %d.', maxLen);
+console.log('Total pages: %d.', idx - 1);
 
 const BatchSize = 128;
 const PathSize = 4;
-const pathVector = tf.input({ shape: [PathSize] });
-const lstm = tf.layers.lstm({ units: PathSize, returnSequences: true }).apply(pathVector);
-console.log(lstm.shape);
-const dense = tf.layers.dense({ units: idx }).apply(lstm);
-const activation = tf.layers.activation({ activation: 'softmax' }).apply(dense);
-const model = tf.model({ inputs: pathVector, outputs: activation });
+
+const modelSaveHandle = tfn.io.fileSystem('./data');
+const modelLoadHandle = tfn.io.fileSystem('./data/model.json');
+
+const getModel = async () => {
+  const pathVector = tf.input({ shape: [PathSize, 1] });
+  const lstm = tf.layers.lstm({ units: 10, returnSequences: false }).apply(pathVector);
+  const dense = tf.layers.dense({ units: idx }).apply(lstm);
+  const activation = tf.layers.activation({ activation: 'softmax' }).apply(dense);
+  let model = tf.model({ inputs: pathVector, outputs: activation });
+  try {
+    model = await tf.loadModel(modelLoadHandle);
+    console.log('Model loaded');
+  } catch (e) {
+    console.log('Cannot load model', e);
+  }
+  return Promise.resolve(model);
+};
 
 const predict = path => model.predict(path);
 
-const trainHelper = (xs, ys, iterations, learningRate, epoch) => {
-  console.log('Epoch %d, batch size: %d', epoch, ys.length);
+const trainHelper = async (xs, ys, iterations, learningRate, epoch) => {
+  console.log('Epoch %d, batch size: %d', epoch, xs.shape[0]);
   const loss = (paths, next) => tf.losses.softmaxCrossEntropy(paths, next).mean();
   const optimizer = tf.train.adam(learningRate);
   for (let i = 0; i < iterations; i++) {
-    optimizer.minimize(() => {
-      const y_ = predict(xs);
-      const res = loss(y_, ys);
-      return res;
-    });
+    const cost = optimizer.minimize(() => {
+      return loss(predict(xs), ys.asType('float32'));
+    }, true);
+    if (i === iterations - 1) {
+      console.log('Loss: %d', cost.dataSync()[0]);
+    }
   }
+  await model.save(modelSaveHandle);
 };
 
-const train = (training, iterations, learningRate) => {
+const train = async (training, iterations, learningRate) => {
   let epoch = 0;
   for (let l = 0; l < PathSize; l++) {
     const history = [];
@@ -74,19 +87,26 @@ const train = (training, iterations, learningRate) => {
       while (path.length < PathSize) {
         path.push(0);
       }
-      history.push(path);
-      next.push([training[i][l]]);
+      history.push([path]);
+      next.push(urlIdx[training[i][l]]);
     }
     if (history.length < 10) {
       continue;
     }
     for (let i = 0; i < history.length; i += BatchSize) {
+      const batch = history.slice(i, i + BatchSize);
+      // console.log(batch.length);
+      if (batch.length === 0) continue;
       epoch++;
-      const xs = tf.tensor3d(history.slice(i, BatchSize)).reshape([PathSize, BatchSize]);
-      const yx = tf.tensor3d(next.slice(i, BatchSize)).reshape([1, BatchSize]);
-      trainHelper(xs, yx, iterations, learningRate, epoch);
+      const xs = tf.tensor3d(batch).reshape([batch.length, PathSize, 1]);
+      const ys = tf.oneHot(next.slice(i, i + BatchSize), idx);
+      await trainHelper(xs, ys, iterations, learningRate, epoch);
     }
   }
 };
 
-train(training, 50, 0.03);
+let model;
+getModel().then(m => {
+  model = m;
+  train(training, 50, 0.03);
+});

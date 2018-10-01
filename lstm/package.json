@@ -21,6 +21,7 @@
     "typescript": "^3.1.1"
   },
   "dependencies": {
-    "@tensorflow/tfjs": "^0.13.1"
+    "@tensorflow/tfjs": "^0.13.1",
+    "@tensorflow/tfjs-node": "^0.1.17"
   }
 }
