@@ -13,7 +13,7 @@ const rows = readFileSync('./paths_finished.tsv')
   .split('\n')
   .filter(r => !r.startsWith('#') && r.trim().length)
   .map(r => r.split('\t')[3].split(';'))
-  .slice(0, 500);
+  .slice(0, 1000);
 
 const urlIdx = {};
 const idxUrl = {};
@@ -44,9 +44,10 @@ const modelLoadHandle = tfn.io.fileSystem('./data/model.json');
 const getModel = async learningRate => {
   const pathVector = tf.input({ shape: [PathSize, 1] });
   const lstm = tf.layers.lstm({ units: 10, returnSequences: false }).apply(pathVector);
-  const dense = tf.layers.dense({ units: idx }).apply(lstm);
-  const activation = tf.layers.activation({ activation: 'softmax' }).apply(dense);
-  let model = tf.model({ inputs: pathVector, outputs: activation });
+  // const dense1 = tf.layers.dense({ units: 10, inputShape: [PathSize], activation: 'relu' }).apply(pathVector);
+  const dense2 = tf.layers.dense({ units: idx, activation: 'softmax' }).apply(lstm);
+  let model = tf.model({ inputs: pathVector, outputs: dense2 });
+  model.summary();
   try {
     model = await tf.loadModel(modelLoadHandle);
     console.log('Model loaded');
@@ -54,7 +55,7 @@ const getModel = async learningRate => {
     console.log('Cannot load model %s. Creating new.', e.toString());
   }
   model.compile({
-    optimizer: tf.train.adam(learningRate),
+    optimizer: tf.train.adamax(learningRate),
     loss: 'categoricalCrossentropy',
     metrics: ['accuracy']
   });
@@ -63,16 +64,16 @@ const getModel = async learningRate => {
 
 const trainHelper = async (model, xs, ys) => {
   await model.fit(xs, ys, {
-    epochs: 100,
+    shuffle: true,
+    epochs: 50,
     batchSize: 128,
-    validationSplit: 0.1,
     verbose: 1,
     callbacks: {
       onBatchEnd: async (batch, logs) => {
-        console.log('Accuracy %d, loss: %d', logs.acc, logs.loss);
         await tf.nextFrame();
       },
-      onEpochEnd() {
+      onEpochEnd(_, logs) {
+        console.log('Accuracy %d, loss: %d', logs.acc.toFixed(5), logs.loss.toFixed(5));
         console.log('Epoch ended');
       }
     }
@@ -89,8 +90,7 @@ const shuffle = (a, b) => {
   }
 };
 
-const train = async (model, training, iterations) => {
-  let epoch = 0;
+const train = async (model, training) => {
   const history = [];
   const next = [];
   let totalMin = Infinity;
@@ -99,7 +99,7 @@ const train = async (model, training, iterations) => {
     for (let i = 0; i < training.length; i++) {
       const t = training[i];
       if (t.length <= l) {
-        console.log('Training path is less then %d', l);
+        // console.log('Training path is less then %d', l);
         continue;
       }
       total++;
@@ -111,10 +111,10 @@ const train = async (model, training, iterations) => {
     for (let i = 0; i < Math.min(training.length, totalMin); i++) {
       const t = training[i];
       if (t.length <= l) {
-        console.log('Training path is less then %d', l);
+        // console.log('Training path is less then %d', l);
         continue;
       }
-      const path = t.slice(0, l).map(u => urlIdx[u]);
+      const path = t.slice(0, l).map(u => urlIdx[u] / idx);
       while (path.length < PathSize) {
         path.push(0);
       }
@@ -124,8 +124,8 @@ const train = async (model, training, iterations) => {
   }
   shuffle(history, next);
   const xs = tf.tensor3d(history).reshape([history.length, PathSize, 1]);
-  const ys = tf.oneHot(next, idx);
-  await trainHelper(model, xs, ys, iterations, epoch);
+  const ys = tf.oneHot(next, idx).cast('float32');
+  await trainHelper(model, xs, ys);
 };
 
 const predict = async (model, test) => {
@@ -135,7 +135,7 @@ const predict = async (model, test) => {
     for (let i = 0; i < test.length; i++) {
       const t = test[i];
       if (t.length <= l) {
-        console.log('Training path is less then %d', l);
+        // console.log('Training path is less then %d', l);
         continue;
       }
       total++;
@@ -147,10 +147,10 @@ const predict = async (model, test) => {
     for (let i = 0; i < Math.min(test.length, totalMin); i++) {
       const t = test[i];
       if (t.length <= l) {
-        console.log('Training path is less then %d', l);
+        // console.log('Training path is less then %d', l);
         continue;
       }
-      const path = t.slice(0, l).map(u => urlIdx[u]);
+      const path = t.slice(0, l).map(u => urlIdx[u] / idx);
       while (path.length < PathSize) {
         path.push(0);
       }
@@ -159,7 +159,7 @@ const predict = async (model, test) => {
         t[l],
         idxUrl[
           model
-            .predict(tf.tensor3d([[path]], [1, 1, PathSize]).reshape([1, PathSize, 1]))
+            .predict(tf.tensor3d([path], [1, PathSize, 1]).reshape([1, PathSize, 1]))
             .argMax(1)
             .dataSync()
         ],
@@ -171,6 +171,6 @@ const predict = async (model, test) => {
 
 getModel(LearningRate).then(m => {
   model = m;
-  predict(model, training);
-  // train(model, training, 1250, 0.01);
+  // predict(model, training);
+  train(model, training, 1250);
 });
