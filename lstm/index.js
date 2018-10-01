@@ -68,7 +68,7 @@ const trainHelper = async (xs, ys, iterations, learningRate, epoch) => {
       return loss(predict(xs), ys.asType('float32'));
     }, true);
     if (i === iterations - 1) {
-      console.log('Loss: %d', cost.dataSync()[0]);
+      console.log('Cost: %d', cost.dataSync()[0]);
     }
   }
   await model.save(modelSaveHandle);
