@@ -173,6 +173,6 @@ const buildMarkov = data => {
 
 getModel(LearningRate).then(async m => {
   model = m;
-  // await predict(model, training);
-  await train(model, training);
+  await predict(model, training);
+  // await train(model, training);
 });
