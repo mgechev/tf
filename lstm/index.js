@@ -32,7 +32,7 @@ console.log('Total entries in the train set: %d.', training.length);
 console.log('Total pages: %d.', TotalPages - 1);
 
 const PathLength = 3;
-const LearningRate = 0.01;
+const LearningRate = 0.005;
 
 const modelSaveHandle = tfn.io.fileSystem('./data');
 const modelLoadHandle = tfn.io.fileSystem('./data/model.json');
@@ -41,7 +41,8 @@ const getModel = async learningRate => {
   let model = tf.sequential();
 
   model.add(tf.layers.inputLayer({ inputShape: [PathLength, 1] }));
-  model.add(tf.layers.lstm({ units: 1 }));
+  model.add(tf.layers.lstm({ units: 60, returnSequences: true }));
+  model.add(tf.layers.lstm({ units: 70, returnSequences: false }));
   model.add(tf.layers.batchNormalization());
   model.add(tf.layers.dense({ units: TotalPages, activation: 'softmax' }));
 
@@ -64,7 +65,7 @@ const getModel = async learningRate => {
 const train = async (model, training) => {
   const history = [];
   const next = [];
-  for (let l = 1; l <= PathLength; l++) {
+  for (let l = 0; l <= PathLength; l++) {
     for (let i = 0; i < training.length; i++) {
       const t = training[i];
       const path = t.slice(0, l).map(u => urlIdx[u] / TotalPages);
@@ -81,8 +82,8 @@ const train = async (model, training) => {
 
   let epoch = 0;
   await model.fit(xs, ys, {
-    batchSize: 512,
-    epochs: 250,
+    // batchSize: 512,
+    epochs: 350,
     callbacks: {
       onEpochEnd(_, logs) {
         console.log('Epoch %d, accuracy %d, loss: %d', ++epoch, logs.acc.toFixed(5), logs.loss.toFixed(5));
@@ -99,7 +100,7 @@ const predict = (model, test) => {
 
   const markov = buildMarkov(test);
 
-  for (let l = 1; l <= PathLength; l++) {
+  for (let l = 0; l <= PathLength; l++) {
     for (let i = 0; i < test.length; i++) {
       const t = test[i];
       const original = t.slice(0, l).map(u => urlIdx[u]);
@@ -172,6 +173,6 @@ const buildMarkov = data => {
 
 getModel(LearningRate).then(async m => {
   model = m;
-  await predict(model, test);
-  // await train(model, training);
+  // await predict(model, training);
+  await train(model, training);
 });
