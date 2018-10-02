@@ -42,6 +42,7 @@ const getModel = async learningRate => {
 
   model.add(tf.layers.inputLayer({ inputShape: [PathLength, 1] }));
   model.add(tf.layers.lstm({ units: 1 }));
+  model.add(tf.layers.batchNormalization());
   model.add(tf.layers.dense({ units: TotalPages, activation: 'softmax' }));
 
   model.summary();
@@ -53,7 +54,7 @@ const getModel = async learningRate => {
     console.log('Cannot load model %s. Creating new.', e.toString());
   }
   model.compile({
-    optimizer: tf.train.adam(learningRate),
+    optimizer: tf.train.adamax(learningRate),
     loss: 'categoricalCrossentropy',
     metrics: ['accuracy']
   });
@@ -122,7 +123,7 @@ const predict = (model, test) => {
       }
       total++;
     }
-    console.log('LSTM %d, Markov %d', nnSame / total, markovSame / total);
+    console.log('Path length %d, LSTM %d, Markov %d', l, nnSame / total, markovSame / total);
   }
 };
 
@@ -171,6 +172,6 @@ const buildMarkov = data => {
 
 getModel(LearningRate).then(async m => {
   model = m;
-  // predict(model, test);
-  await train(model, training);
+  await predict(model, test);
+  // await train(model, training);
 });
