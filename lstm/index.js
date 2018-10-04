@@ -100,7 +100,7 @@ const predict = (model, test) => {
 
   const markov = buildMarkov(test);
 
-  for (let l = 0; l <= PathLength; l++) {
+  for (let l = 1; l <= PathLength; l++) {
     for (let i = 0; i < test.length; i++) {
       const t = test[i];
       const original = t.slice(0, l).map(u => urlIdx[u]);
@@ -173,6 +173,6 @@ const buildMarkov = data => {
 
 getModel(LearningRate).then(async m => {
   model = m;
-  await predict(model, training);
+  await predict(model, test);
   // await train(model, training);
 });
