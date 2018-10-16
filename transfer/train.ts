@@ -5,8 +5,8 @@ require('@tensorflow/tfjs-node');
 
 const Positive = 'hits-aug';
 const Negative = 'no-hits-aug';
-const Epochs = 80;
-const BatchSize = 0.2;
+const Epochs = 60;
+const BatchSize = 0.1;
 
 const train = async () => {
   const mobileNet = await loadModel();
@@ -24,13 +24,11 @@ const train = async () => {
   const positives = require('fs')
     .readdirSync(Positive)
     .filter(f => f.endsWith('.jpg'))
-    .map(f => `${Positive}/${f}`)
-    .slice(0, 1);
+    .map(f => `${Positive}/${f}`);
   const negatives = require('fs')
     .readdirSync(Negative)
     .filter(f => f.endsWith('.jpg'))
-    .map(f => `${Negative}/${f}`)
-    .slice(0, 1);
+    .map(f => `${Negative}/${f}`);
 
   const ys = tf.tensor2d(new Array(positives.length).fill(1).concat(new Array(negatives.length).fill(0)), [
     positives.length + negatives.length,
@@ -65,7 +63,7 @@ const train = async () => {
     }
   });
 
-  // await model.save('file://punch_model');
+  await model.save('file://punch_model');
 };
 
 train();
