@@ -1,7 +1,7 @@
 import * as tf from '@tensorflow/tfjs';
 import * as mobileNet from '@tensorflow-models/mobilenet';
 
-const modelName = 'model-1';
+const modelName = 'model-2';
 
 navigator.mediaDevices
   .getUserMedia({
@@ -23,8 +23,8 @@ const label = document.getElementById('label') as HTMLSpanElement;
 const positive = document.getElementById('pos') as HTMLImageElement;
 const negative = document.getElementById('neg') as HTMLImageElement;
 
-const totalPositive = 150;
-const totalNegative = 150;
+const totalPositive = 80;
+const totalNegative = 80;
 
 const start = 0;
 
