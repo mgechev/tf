@@ -29,8 +29,9 @@ const mobilenetInfer = m => (p): tf.Tensor<tf.Rank> => m.infer(p, Layer);
 
 const positive = document.getElementById('pos') as HTMLImageElement;
 const negative = document.getElementById('neg') as HTMLImageElement;
-const totalPositive = 500;
-const totalNegative = 500;
+const totalPositive = 200;
+const totalNegative = 200;
+const perRow = 20;
 
 const ImageSize = {
   Width: 100,
@@ -47,12 +48,10 @@ const generateImages = (img: HTMLImageElement, cb) => {
   let col = 0;
   const crop = document.getElementById('crop') as HTMLCanvasElement;
   for (let i = 0; i < totalPositive; i++) {
-    crop
-      .getContext('2d')
-      .drawImage(img, col * ImageSize.Width, row * ImageSize.Height, ImageSize.Width, ImageSize.Height);
+    crop.getContext('2d').drawImage(img, col * ImageSize.Width, row * ImageSize.Height);
     cb(crop);
     col++;
-    if (i > 7500) {
+    if (i > perRow) {
       row++;
       col = 0;
     }
