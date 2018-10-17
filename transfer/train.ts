@@ -54,7 +54,7 @@ const train = async () => {
 
   await model.fit(xs, ys, {
     epochs: Epochs,
-    batchSize: (positives.length + negatives.length) * BatchSize,
+    batchSize: parseInt(((positives.length + negatives.length) * BatchSize).toFixed(0)),
     callbacks: {
       onBatchEnd: async (_, logs) => {
         console.log('Cost: %s, accuracy: %s', logs.loss.toFixed(5), logs.acc.toFixed(5));
