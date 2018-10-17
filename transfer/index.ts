@@ -1,8 +1,6 @@
 import * as tf from '@tensorflow/tfjs';
 import * as mobileNet from '@tensorflow-models/mobilenet';
 
-const modelName = 'model-2';
-
 navigator.mediaDevices
   .getUserMedia({
     video: true,
@@ -17,7 +15,6 @@ const Layer = 'global_average_pooling2d_1';
 const mobilenetInfer = m => (p): tf.Tensor<tf.Rank> => m.infer(p, Layer);
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const crop = document.getElementById('crop') as HTMLCanvasElement;
-const label = document.getElementById('label') as HTMLSpanElement;
 
 const ImageSize = {
   Width: 100,
@@ -66,11 +63,11 @@ tf.loadModel('http://localhost:5000/model.json').then(model => {
         grayscale(crop);
         const prob = Number((model.predict(mobilenet(tf.fromPixels(crop))) as tf.Tensor1D).dataSync());
         console.log('Probability', prob);
-        const pred = prob >= 0.7;
+        const pred = prob >= 0.6;
         if (pred) {
-          label.innerHTML = 'Yes!';
+          (window as any).onHit && (window as any).onHit();
         } else {
-          label.innerHTML = 'No.';
+          (window as any).onStand && (window as any).onStand();
         }
       }, 500);
     });
