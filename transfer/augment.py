@@ -19,13 +19,15 @@ np.random.seed(44)
 ia.seed(44)
 
 def main():
-    for i in range(1, 327):
-        draw_single_sequential_images(str(i))
+    for i in range(1, 316):
+        draw_single_sequential_images(str(i), "no-hits", "no-hits-aug")
+    for i in range(1, 334):
+        draw_single_sequential_images(str(i), "hits", "hits-aug")
 
-def draw_single_sequential_images(filename):
+def draw_single_sequential_images(filename, path, aug_path):
     ia.seed(44)
 
-    image = misc.imresize(ndimage.imread("no-hits/" + filename + ".jpg")[0:643, 0:643], (56, 100))
+    image = misc.imresize(ndimage.imread(path + "/" + filename + ".jpg"), (56, 100))
 
     sometimes = lambda aug: iaa.Sometimes(0.5, aug)
     seq = iaa.Sequential(
@@ -48,6 +50,7 @@ def draw_single_sequential_images(filename):
                 mode=ia.ALL # use any of scikit-image's warping modes (see 2nd image from the top for examples)
             )),
             iaa.Grayscale(alpha=(0.0, 1.0)),
+            iaa.Invert(0.05, per_channel=True), # invert color channels
             # execute 0 to 5 of the following (less important) augmenters per image
             # don't execute all of them, as that would often be way too strong
             iaa.SomeOf((0, 5),
@@ -80,8 +83,13 @@ def draw_single_sequential_images(filename):
         random_order=True
     )
 
-    grid = seq.draw_grid(image, cols=8, rows=8)
-    misc.imsave("training-images-nothing/" + filename + ".jpg", grid)
+    im = np.zeros((10, 56, 100, 3), dtype=np.uint8)
+    for c in range(0, 10):
+        im[c] = image
+
+    grid = seq.augment_images(im)
+    for im in range(len(grid)):
+        misc.imsave(aug_path + "/" + filename + "_" + str(im) + ".jpg", grid[im])
 
 if __name__ == "__main__":
     main()
