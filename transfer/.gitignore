@@ -3,9 +3,11 @@ neg
 dist
 hits.jpg
 misses.jpg
-hits-aug
 kicks-aug
+hits-aug
 no-hits-aug
+hits-aug-old
+no-hits-aug-old
 punch_kick_model
 xs.json
 
