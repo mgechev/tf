@@ -14,8 +14,7 @@ const train = async () => {
   const model = tf.sequential();
   model.add(tf.layers.inputLayer({ inputShape: [1024] }));
   model.add(tf.layers.dense({ units: 1024, activation: 'relu' }));
-  model.add(tf.layers.dense({ units: 1024, activation: 'relu' }));
-  model.add(tf.layers.dense({ units: 2, activation: 'softmax' }));
+  model.add(tf.layers.dense({ units: 1, activation: 'sigmoid' }));
   await model.compile({
     optimizer: tf.train.adam(0.00001),
     loss: tf.losses.sigmoidCrossEntropy,
