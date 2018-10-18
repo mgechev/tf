@@ -14,9 +14,10 @@ const train = async () => {
   const model = tf.sequential();
   model.add(tf.layers.inputLayer({ inputShape: [1024] }));
   model.add(tf.layers.dense({ units: 1024, activation: 'relu' }));
+  model.add(tf.layers.dense({ units: 1024, activation: 'relu' }));
   model.add(tf.layers.dense({ units: 2, activation: 'softmax' }));
   await model.compile({
-    optimizer: tf.train.adam(0.000001),
+    optimizer: tf.train.adam(0.00001),
     loss: tf.losses.sigmoidCrossEntropy,
     metrics: ['accuracy']
   });
@@ -31,12 +32,10 @@ const train = async () => {
     .filter(f => f.endsWith('.jpg'))
     .map(f => `${Negative}/${f}`);
 
-  const ys = tf.tensor2d(
-    new Array(hits.length)
-      .fill([1, 0])
-      .concat(new Array(negatives.length).fill([0, 0])),
-    [hits.length + negatives.length, 2]
-  );
+  const ys = tf.tensor2d(new Array(hits.length).fill(1).concat(new Array(negatives.length).fill(0)), [
+    hits.length + negatives.length,
+    1
+  ]);
 
   let xs: tf.Tensor = null;
   hits.forEach((path: string) => {
@@ -70,4 +69,3 @@ const train = async () => {
 };
 
 train();
-
