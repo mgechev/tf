@@ -65,11 +65,12 @@ tf.loadModel('http://localhost:5000/model.json').then(model => {
           mobilenet(tf.fromPixels(crop))
         ) as tf.Tensor1D).dataSync() as Float32Array);
         const detect = (window as any).Detect;
-        if (punch < 0.97 && kick < 0.97) {
+        console.log('%cPROB: ' + punch.toFixed(2), 'color: red; font-size: 30px;');
+        if (punch < 0.97) {
           detect.onStand();
           return;
         }
-        if (punch > kick) {
+        if (punch) {
           detect.onPunch();
         } else {
           // detect.onKick();

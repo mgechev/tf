@@ -7,15 +7,15 @@ require('@tensorflow/tfjs-node');
 const Hits = 'hits-aug';
 const Kicks = 'kicks-aug';
 const Negative = 'no-hits-aug';
-const Epochs = 90;
-const BatchSize = 0.1;
+const Epochs = 100;
+const BatchSize = 0.4;
 
 const train = async () => {
   const mobileNet = await loadModel();
   const model = tf.sequential();
   model.add(tf.layers.inputLayer({ inputShape: [1024] }));
-  model.add(tf.layers.dense({ units: 1024, activation: 'relu' }));
-  model.add(tf.layers.dense({ units: 2048, activation: 'relu' }));
+  model.add(tf.layers.conv2d({ filters: 4, kernelSize: 800, padding: 'same' }));
+  model.add(tf.layers.avgPool1d({}));
   model.add(tf.layers.dense({ units: 1024, activation: 'relu' }));
   model.add(tf.layers.dense({ units: 2, activation: 'softmax' }));
   await model.compile({
@@ -27,15 +27,18 @@ const train = async () => {
   const hits = require('fs')
     .readdirSync(Hits)
     .filter(f => f.endsWith('.jpg'))
-    .map(f => `${Hits}/${f}`);
+    .map(f => `${Hits}/${f}`)
+    .slice(1);
   const kicks = require('fs')
     .readdirSync(Kicks)
     .filter(f => f.endsWith('.jpg'))
-    .map(f => `${Kicks}/${f}`);
+    .map(f => `${Kicks}/${f}`)
+    .slice(1);
   const negatives = require('fs')
     .readdirSync(Negative)
     .filter(f => f.endsWith('.jpg'))
-    .map(f => `${Negative}/${f}`);
+    .map(f => `${Negative}/${f}`)
+    .slice(1);
 
   const ys = tf.tensor2d(
     new Array(hits.length)
@@ -68,19 +71,18 @@ const train = async () => {
     xs = xs.concat(res);
   });
 
-  fs.writeFileSync('xs.json', JSON.stringify(await xs.data()));
-
   await model.fit(xs, ys, {
     epochs: Epochs,
     batchSize: parseInt(((hits.length + kicks.length + negatives.length) * BatchSize).toFixed(0)),
     callbacks: {
       onBatchEnd: async (_, logs) => {
         console.log('Cost: %s, accuracy: %s', logs.loss.toFixed(5), logs.acc.toFixed(5));
-        await model.save('file://punch_kick_model_freq');
         await tf.nextFrame();
       }
     }
   });
+
+  await model.save('file://no-aug-all');
 };
 
 train();
