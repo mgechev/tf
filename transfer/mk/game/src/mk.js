@@ -27,7 +27,7 @@ console.log(images);
 
     this._initializeFighters(options.fighters);
 
-    var a = options.arena;
+    const a = options.arena;
     this.arena = new mk.arenas.Arena({
       fighters: this.fighters,
       arena: a.arena,
@@ -53,19 +53,15 @@ console.log(images);
   };
 
   mk.controllers.Base.prototype._initializeFighters = function(fighters) {
-    var current;
-
     this.fighters = [];
     this._opponents = {};
 
     for (var i = 0; i < fighters.length; i += 1) {
-      current = fighters[i];
-      var orientation = i === 0 ? mk.fighters.orientations.LEFT : mk.fighters.orientations.RIGHT;
       this.fighters.push(
         new mk.fighters.Fighter({
-          name: current.name,
+          name: fighters[i].name,
           arena: this.arena,
-          orientation: orientation,
+          orientation: i === 0 ? mk.fighters.orientations.LEFT : mk.fighters.orientations.RIGHT,
           game: this
         })
       );
@@ -79,24 +75,20 @@ console.log(images);
   };
 
   mk.controllers.Base.prototype.init = function(promise) {
-    var current = 0,
-      total = this.fighters.length,
-      self = this,
-      f;
-    for (var i = 0; i < this.fighters.length; i += 1) {
-      f = this.fighters[i];
-      (function(f) {
-        f.init(function() {
-          f.setMove(mk.moves.types.STAND);
-          current += 1;
-          if (current === total) {
-            self.arena.init();
-            self._setFighersArena();
-            self._initialize();
-            promise._initialized();
-          }
-        });
-      })(f);
+    let current = 0;
+    const total = this.fighters.length;
+    for (let i = 0; i < this.fighters.length; i += 1) {
+      let f = this.fighters[i];
+      f.init(() => {
+        f.setMove(mk.moves.types.STAND);
+        current += 1;
+        if (current === total) {
+          this.arena.init();
+          this._setFighersArena();
+          this._initialize();
+          promise._initialized();
+        }
+      });
     }
   };
 
@@ -105,12 +97,12 @@ console.log(images);
   };
 
   mk.controllers.Base.prototype._setFighersArena = function() {
-    var f;
+    let f;
     for (var i = 0; i < this.fighters.length; i += 1) {
       f = this.fighters[i];
       f.setArena(this.arena);
     }
-    f.setX(470); //testing
+    f.setX(310); //testing
   };
 
   mk.controllers.Base.prototype.fighterAttacked = function(fighter, damage) {
@@ -235,12 +227,11 @@ console.log(images);
   };
 
   mk.controllers.Basic.prototype._getMove = function(pressed, k, p) {
-    var m = mk.moves.types,
-      f = this.fighters[p],
-      leftOrient = mk.fighters.orientations.LEFT,
-      rightOrient = mk.fighters.orientations.RIGHT,
-      orient = f.getOrientation(),
-      self = this;
+    const m = mk.moves.types;
+    const f = this.fighters[p];
+    const leftOrient = mk.fighters.orientations.LEFT;
+    const rightOrient = mk.fighters.orientations.RIGHT;
+    const orient = f.getOrientation();
 
     if (f.getMove().type === m.SQUAT && !pressed[k.DOWN]) {
       return m.STAND_UP;
@@ -325,10 +316,14 @@ console.log(images);
 
   mk.controllers.WebcamInput.prototype._addMovementHandlers = function() {
     var f = this.fighters[0];
-    window.onHit = function() {
+    window.Detect = window.Detect || {};
+    window.Detect.onPunch = function() {
       f.setMove(mk.moves.types.HIGH_PUNCH);
     };
-    window.onStand = function() {
+    window.Detect.onKick = function() {
+      f.setMove(mk.moves.types.LOW_KICK);
+    };
+    window.Detect.onStand = function() {
       f.setMove(mk.moves.types.STAND);
     };
   };
@@ -632,9 +627,9 @@ console.log(images);
   };
 
   mk.arenas.Arena.prototype.moveFighter = function(fighter, pos) {
-    var opponent = this._game.getOpponent(fighter),
-      op = { x: opponent.getX(), y: opponent.getY() },
-      isOver = pos.y + fighter.getVisibleHeight() <= op.y;
+    const opponent = this._game.getOpponent(fighter);
+    const op = { x: opponent.getX(), y: opponent.getY() };
+    const isOver = pos.y + fighter.getVisibleHeight() <= op.y;
 
     if (pos.x <= 0) {
       pos.x = 0;
@@ -667,7 +662,7 @@ console.log(images);
       pos.x = fighter.getX();
       return pos;
     }
-    var diff;
+    let diff;
     if (fighter.getOrientation() === mk.fighters.orientations.LEFT) {
       diff = Math.min(
         this.width - (opponent.getX() + opponent.getVisibleWidth() + fighter.getVisibleWidth()),
@@ -789,8 +784,8 @@ console.log(images);
     this._steps = {};
     this._steps[o.RIGHT] = [];
     this._steps[o.LEFT] = [];
-    for (var i = 0; i < this._totalSteps; i += 1) {
-      for (var orientation in o) {
+    for (let i = 0; i < this._totalSteps; i += 1) {
+      for (const orientation in o) {
         img = document.createElement('img');
         img.onload = function() {
           loaded += 1;
@@ -1324,7 +1319,7 @@ console.log(images);
       owner: owner,
       type: mk.moves.types.LOW_KICK,
       steps: 6,
-      damage: 6
+      damage: 25
     });
   };
 
@@ -1346,7 +1341,7 @@ console.log(images);
       owner: owner,
       type: mk.moves.types.HIGH_PUNCH,
       steps: 5,
-      damage: 8
+      damage: 20
     });
   };
 
@@ -1537,7 +1532,7 @@ console.log(images);
     this._height = 60;
     this._locked = false;
     this._position = {
-      x: 50,
+      x: 260,
       y: mk.config.PLAYER_TOP
     };
     this.init();
@@ -1574,11 +1569,10 @@ console.log(images);
     this.moves[mk.moves.types.FORWARD_JUMP] = new mk.moves.ForwardJump(this);
     this.moves[mk.moves.types.BACKWARD_JUMP] = new mk.moves.BackwardJump(this);
 
-    var self = this,
-      initialized = 0,
-      total = Object.keys(this.moves).length;
+    let initialized = 0;
+    const total = Object.keys(this.moves).length;
 
-    for (var move in this.moves) {
+    for (const move in this.moves) {
       this.moves[move].init(function() {
         initialized += 1;
         if (initialized === total) {
@@ -1592,8 +1586,8 @@ console.log(images);
 
   mk.fighters.Fighter.prototype.isJumping = function() {
     if (!this._currentMove) return false;
-    var move = this._currentMove.type,
-      m = mk.moves.types;
+    const move = this._currentMove.typep;
+    const m = mk.moves.types;
     if (
       move === m.JUMP ||
       move === m.BACKWARD_JUMP ||

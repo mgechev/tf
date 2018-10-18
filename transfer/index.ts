@@ -64,15 +64,16 @@ tf.loadModel('http://localhost:5000/model.json').then(model => {
         const [punch, kick] = Array.from((model.predict(
           mobilenet(tf.fromPixels(crop))
         ) as tf.Tensor1D).dataSync() as Float32Array);
-        // console.log('%cPROB' + punch, 'color: green; font-size: 30px');
-        if (punch < 0.75 && kick < 0.75) {
+        const detect = (window as any).Detect;
+        if (punch < 0.97 && kick < 0.97) {
+          detect.onStand();
           return;
         }
         if (punch > kick) {
-          console.log('%cPUNCH', 'color: blue; font-size: 30px');
+          detect.onPunch();
         } else {
-          console.log('%cKICK', 'color: red; font-size: 30px');
+          // detect.onKick();
         }
-      }, 500);
+      }, 100);
     });
 });
