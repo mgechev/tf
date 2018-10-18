@@ -61,13 +61,17 @@ tf.loadModel('http://localhost:5000/model.json').then(model => {
           );
 
         grayscale(crop);
-        const prob = Number((model.predict(mobilenet(tf.fromPixels(crop))) as tf.Tensor1D).dataSync());
-        console.log('Probability', prob);
-        const pred = prob >= 0.6;
-        if (pred) {
-          (window as any).onHit && (window as any).onHit();
+        const [punch, kick] = Array.from((model.predict(
+          mobilenet(tf.fromPixels(crop))
+        ) as tf.Tensor1D).dataSync() as Float32Array);
+        // console.log('%cPROB' + punch, 'color: green; font-size: 30px');
+        if (punch < 0.75 && kick < 0.75) {
+          return;
+        }
+        if (punch > kick) {
+          console.log('%cPUNCH', 'color: blue; font-size: 30px');
         } else {
-          (window as any).onStand && (window as any).onStand();
+          console.log('%cKICK', 'color: red; font-size: 30px');
         }
       }, 500);
     });
