@@ -50134,7 +50134,7 @@ tf.loadModel('/tf/model.json').then(function (model) {
   mobileNet.load().then(function (mn) {
     mobilenet = mobilenetInfer(mn);
     document.getElementById('playground').style.display = 'block';
-    document.getElementById('loading').style.display = 'none';
+    document.getElementById('loading-page').style.display = 'none';
     console.log('MobileNet created');
   }).then(function () {
     setInterval(function () {
@@ -50197,7 +50197,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54925" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49404" + '/');
 
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
