@@ -34,7 +34,7 @@ const grayscale = (canvas: HTMLCanvasElement) => {
 };
 
 let mobilenet: (p: any) => tf.Tensor<tf.Rank>;
-tf.loadModel('/model.json').then(model => {
+tf.loadModel('./model.json').then(model => {
   mobileNet
     .load()
     .then((mn: any) => {
