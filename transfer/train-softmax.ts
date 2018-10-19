@@ -6,7 +6,7 @@ require('@tensorflow/tfjs-node');
 const Hits = 'hits-aug';
 const Kicks = 'kicks-aug';
 const Negative = 'no-hits-aug';
-const Epochs = 90;
+const Epochs = 400;
 const BatchSize = 0.1;
 const InputShape = 1024;
 
@@ -15,7 +15,7 @@ const train = async () => {
   const model = tf.sequential();
   model.add(tf.layers.inputLayer({ inputShape: [InputShape] }));
   model.add(tf.layers.dense({ units: 1024, activation: 'relu' }));
-  model.add(tf.layers.dense({ units: 2, activation: 'softmax' }));
+  model.add(tf.layers.dense({ units: 3, activation: 'softmax' }));
   await model.compile({
     optimizer: tf.train.adam(1e-6),
     loss: tf.losses.sigmoidCrossEntropy,
@@ -41,10 +41,10 @@ const train = async () => {
 
   const ys = tf.tensor2d(
     new Array(hits.length)
-      .fill([1, 0])
-      .concat(new Array(kicks.length).fill([0, 1]))
-      .concat(new Array(negatives.length).fill([0, 0])),
-    [hits.length + kicks.length + negatives.length, 2]
+      .fill([1, 0, 0])
+      .concat(new Array(kicks.length).fill([0, 1, 0]))
+      .concat(new Array(negatives.length).fill([0, 0, 1])),
+    [hits.length + kicks.length + negatives.length, 3]
   );
 
   console.log('Getting the punches');
