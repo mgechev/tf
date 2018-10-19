@@ -50130,7 +50130,7 @@ var grayscale = function grayscale(canvas) {
 };
 
 var mobilenet;
-tf.loadModel('./model.json').then(function (model) {
+tf.loadModel('/tf/model.json').then(function (model) {
   mobileNet.load().then(function (mn) {
     mobilenet = mobilenetInfer(mn);
     console.log('MobileNet created');
