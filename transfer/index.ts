@@ -34,7 +34,7 @@ const grayscale = (canvas: HTMLCanvasElement) => {
 };
 
 let mobilenet: (p: any) => tf.Tensor<tf.Rank>;
-tf.loadModel('http://localhost:5000/model.json').then(model => {
+tf.loadModel('/model.json').then(model => {
   mobileNet
     .load()
     .then((mn: any) => {
@@ -61,20 +61,24 @@ tf.loadModel('http://localhost:5000/model.json').then(model => {
           );
 
         grayscale(crop);
-        const res = Array.from((model.predict(
+        const [punch, kick, nothing] = Array.from((model.predict(
           mobilenet(tf.fromPixels(crop))
         ) as tf.Tensor1D).dataSync() as Float32Array);
         const detect = (window as any).Detect;
-        console.log('%cPROB: ' + res.map(a => a.toFixed(2)).join(', '), 'color: red; font-size: 30px;');
-        // if (punch < 0.97 && kick < 0.97) {
-        //   detect.onStand();
-        //   return;
-        // }
-        // if (punch > kick) {
-        //   detect.onPunch();
-        // } else {
-        //   detect.onKick();
-        // }
+        if (nothing >= 0.4) {
+          return;
+        }
+        console.log(punch.toFixed(2), kick.toFixed(2));
+        if (kick > punch && kick >= 0.35) {
+          console.log('%cKick: ' + kick.toFixed(2), 'color: red; font-size: 30px');
+          detect.onKick();
+          return;
+        }
+        if (punch > kick && punch >= 0.35) {
+          console.log('%cPunch: ' + punch.toFixed(2), 'color: blue; font-size: 30px');
+          detect.onPunch();
+          return;
+        }
       }, 100);
     });
 });
