@@ -41,5 +41,5 @@ export const loadModel = async () => {
   const mn = new mobilenet.MobileNet(1, 1);
   mn.path = `file://${ModelPath}`;
   await mn.load();
-  return (input): tf.Tensor2D => mn.infer(input, Layer);
+  return (input): tf.Tensor1D => mn.infer(input, Layer).reshape([1024]);
 };

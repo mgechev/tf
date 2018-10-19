@@ -6,7 +6,7 @@ require('@tensorflow/tfjs-node');
 const Hits = 'hits-aug';
 const Kicks = 'kicks-aug';
 const Negative = 'no-hits-aug';
-const Epochs = 50;
+const Epochs = 90;
 const BatchSize = 0.1;
 const InputShape = 1024;
 
@@ -48,35 +48,12 @@ const train = async () => {
   );
 
   console.log('Getting the punches');
-  let xs: tf.Tensor2D = hits.reduce((p: tf.Tensor2D, path: string) => {
-    const a = mobileNet(readInput(path));
-    if (p) {
-      return p.concat(a);
-    }
-    return a;
-  }, null);
-
-  console.log('Getting the kicks');
-  xs = xs.concat(
-    kicks.reduce((p: tf.Tensor2D, path: string) => {
-      const a = mobileNet(readInput(path));
-      if (p) {
-        return p.concat(a);
-      }
-      return a;
-    }, null)
-  );
-
-  console.log('Getting the negative samples');
-  xs = xs.concat(
-    negatives.reduce((p: tf.Tensor2D, path: string) => {
-      const a = mobileNet(readInput(path));
-      if (p) {
-        return p.concat(a);
-      }
-      return a;
-    }, null)
-  );
+  const xs: tf.Tensor2D = tf.stack(
+    hits
+      .map((path: string) => mobileNet(readInput(path)))
+      .concat(kicks.map((path: string) => mobileNet(readInput(path))))
+      .concat(negatives.map((path: string) => mobileNet(readInput(path))))
+  ) as tf.Tensor2D;
 
   console.log('Fitting the model');
   await model.fit(xs, ys, {
