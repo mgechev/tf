@@ -6,7 +6,7 @@ require('@tensorflow/tfjs-node');
 const Hits = 'hits-aug';
 const Kicks = 'kicks-aug';
 const Negative = 'no-hits-aug';
-const Epochs = 400;
+const Epochs = 500;
 const BatchSize = 0.1;
 const InputShape = 1024;
 
