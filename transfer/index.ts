@@ -39,6 +39,8 @@ tf.loadModel('/tf/model.json').then(model => {
     .load()
     .then((mn: any) => {
       mobilenet = mobilenetInfer(mn);
+      document.getElementById('playground').style.display = 'block';
+      document.getElementById('loading').style.display = 'none';
       console.log('MobileNet created');
     })
     .then(() => {
