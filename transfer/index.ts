@@ -34,12 +34,12 @@ const grayscale = (canvas: HTMLCanvasElement) => {
 };
 
 let mobilenet: (p: any) => tf.Tensor<tf.Rank>;
-tf.loadModel('/tf/model.json').then(model => {
+tf.loadModel('http://localhost:5000/model.json').then(model => {
   mobileNet
     .load()
     .then((mn: any) => {
       mobilenet = mobilenetInfer(mn);
-      document.getElementById('playground').style.display = 'block';
+      document.getElementById('playground').style.display = 'table';
       document.getElementById('loading-page').style.display = 'none';
       console.log('MobileNet created');
     })

@@ -1,5 +1,4 @@
 import { loadModel, readInput } from './utils';
-import * as fs from 'fs';
 
 import * as tf from '@tensorflow/tfjs';
 require('@tensorflow/tfjs-node');
@@ -31,28 +30,16 @@ const train = async () => {
     .filter(f => f.endsWith('.jpg'))
     .map(f => `${Negative}/${f}`);
 
-  const ys = tf.tensor2d(new Array(hits.length).fill(1).concat(new Array(negatives.length).fill(0)), [
-    hits.length + negatives.length,
-    1
-  ]);
+  console.log('Building the training set');
 
-  let xs: tf.Tensor = null;
-  hits.forEach((path: string) => {
-    const input = readInput(path);
-    const res = mobileNet(input);
-    if (xs === null) {
-      xs = res;
-    } else {
-      xs = xs.concat(res);
-    }
-  });
+  const ys = tf.tensor1d(new Array(hits.length).fill(1).concat(new Array(negatives.length).fill(0)));
 
-  negatives.forEach((path: string) => {
-    const input = readInput(path);
-    const res = mobileNet(input);
-    xs = xs.concat(res);
-  });
-
+  console.log('Getting the punches');
+  const xs: tf.Tensor2D = tf.stack(
+    hits
+      .map((path: string) => mobileNet(readInput(path)))
+      .concat(negatives.map((path: string) => mobileNet(readInput(path))))
+  ) as tf.Tensor2D;
   await model.fit(xs, ys, {
     epochs: Epochs,
     batchSize: parseInt(((hits.length + negatives.length) * BatchSize).toFixed(0)),
