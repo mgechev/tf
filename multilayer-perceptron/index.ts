@@ -8,7 +8,7 @@ const createModel = async () => {
   model.add(tf.layers.dense({ units: 10, activation: 'relu' }));
   model.add(tf.layers.dense({ units: 4, activation: 'softmax' }));
   await model.compile({
-    optimizer: tf.train.adam(0.001),
+    optimizer: tf.train.adam(0.01),
     loss: tf.losses.softmaxCrossEntropy,
     metrics: ['accuracy']
   });
@@ -21,7 +21,7 @@ const train = async (model, data) => {
   const ys = tf.stack(data.map(d => d[1]));
   await model.fit(xs, ys, {
     batchSize: Math.floor(0.4 * data.length),
-    epochs: 800,
+    epochs: 200,
     callbacks: {
       onEpochEnd: async (_, logs) => {
         console.log('Cost: %s, accuracy: %s', logs.loss.toFixed(5), logs.acc.toFixed(5));
